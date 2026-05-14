@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskMaster | 個人任務管理系統</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --secondary: #64748b;
+            --bg-main: #f8fafc;
+            --bg-sidebar: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --font-main: 'Inter', 'Noto Sans TC', sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-main); background-color: var(--bg-main); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+        .app-container { display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 1.5rem; z-index: 50; }
+        .sidebar-logo { font-size: 1.5rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2.5rem; }
+        .nav-section { margin-bottom: 2rem; }
+        .nav-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; padding-left: 0.75rem; }
+        .nav-item { display: flex; width: 100%; text-align: left; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: var(--radius-md); color: var(--text-main); border: none; background: none; cursor: pointer; font-weight: 500; margin-bottom: 0.25rem; transition: all 0.2s ease; }
+        .nav-item:hover { background-color: #f1f5f9; color: var(--primary); }
+        .nav-item.active { background-color: #eff6ff; color: var(--primary); }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
+        .header { height: 70px; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; background: rgba(248, 250, 252, 0.8); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 40; }
+        .search-bar { display: flex; align-items: center; background: #ffffff; border: 1px solid var(--border-color); padding: 0.5rem 1rem; border-radius: var(--radius-lg); width: 300px; box-shadow: var(--shadow-sm); }
+        .search-bar input { border: none; padding-left: 0.5rem; width: 100%; font-size: 0.9rem; outline: none; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; padding: 2rem; }
+        .stat-card { padding: 1.5rem; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); background: white; }
+        .stat-title { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.5rem; }
+        .stat-value { font-size: 1.75rem; font-weight: 700; }
+        .task-container { padding: 0 2rem 2rem; }
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+        .btn-add { background: var(--primary); color: white; padding: 0.6rem 1.25rem; border-radius: var(--radius-md); font-weight: 600; display: flex; align-items: center; gap: 0.5rem; border: none; cursor: pointer; }
+        .task-card { background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; }
+        .checkbox { width: 22px; height: 22px; border: 2px solid var(--border-color); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .checkbox.checked { background: var(--primary); border-color: var(--primary); }
+        .task-info { flex: 1; }
+        .task-title.completed { text-decoration: line-through; color: var(--text-muted); }
+        .task-meta { display: flex; gap: 1rem; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+        .tag { padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; }
+        .tag-urgent { background: #fee2e2; color: #b91c1c; }
+        .tag-work { background: #dbeafe; color: #1d4ed8; }
+        .tag-personal { background: #fef3c7; color: #b45309; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal { background: white; width: 90%; max-width: 500px; border-radius: var(--radius-lg); padding: 2rem; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .form-group input, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border-color); border-radius: var(--radius-md); overflow: hidden; }
+        .calendar-day-header { background: #f1f5f9; padding: 0.75rem; text-align: center; font-weight: 600; }
+        .calendar-cell { background: white; min-height: 100px; padding: 0.5rem; border: 0.5px solid #f1f5f9; }
+        .calendar-cell.today { background: #eff6ff; }
+        .task-dot { font-size: 0.65rem; padding: 2px 4px; border-radius: 2px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        const INITIAL_TASKS = [
+            { id: 1, title: '完成專案提案報告', project: '工作', priority: 'urgent', dueDate: '2026-05-15', completed: false },
+            { id: 2, title: '預約牙醫門診', project: '個人', priority: 'normal', dueDate: '2026-05-16', completed: true },
+            { id: 3, title: '健身房運動 1 小時', project: '健康', priority: 'normal', dueDate: '2026-05-15', completed: false },
+            { id: 4, title: '規劃週末旅行行程', project: '個人', priority: 'low', dueDate: '2026-05-20', completed: false },
+        ];
+
+        const PROJECTS = ['全部', '工作', '個人', '健康', '學習'];
+
+        function App() {
+            const [tasks, setTasks] = useState(INITIAL_TASKS);
+            const [activeView, setActiveView] = useState('dashboard');
+            const [searchQuery, setSearchQuery] = useState('');
+            const [isModalOpen, setIsModalOpen] = useState(false);
+
+            const filteredTasks = useMemo(() => {
+                return tasks.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()));
+            }, [tasks, searchQuery]);
+
+            const stats = {
+                total: tasks.length,
+                pending: tasks.filter(t => !t.completed).length,
+                completed: tasks.filter(t => t.completed).length,
+            };
+
+            const toggleTask = (id) => setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+            const deleteTask = (id) => { if(confirm('確定刪除？')) setTasks(tasks.filter(t => t.id !== id)); };
+            const addTask = (data) => { setTasks([{ id: Date.now(), ...data, completed: false }, ...tasks]); setIsModalOpen(false); };
+
+            return (
+                <div className="app-container">
+                    <aside className="sidebar">
+                        <div className="sidebar-logo">🎯 TaskMaster</div>
+                        <nav className="nav-section">
+                            <p className="nav-label">主要選單</p>
+                            <button className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}>📊 儀表板</button>
+                            <button className={`nav-item ${activeView === 'tasks' ? 'active' : ''}`} onClick={() => setActiveView('tasks')}>✅ 我的任務</button>
+                            <button className={`nav-item ${activeView === 'calendar' ? 'active' : ''}`} onClick={() => setActiveView('calendar')}>📅 行事曆</button>
+                        </nav>
+                        <nav className="nav-section">
+                            <p className="nav-label">專案分類</p>
+                            {PROJECTS.slice(1).map(p => <button key={p} className="nav-item">📁 {p}</button>)}
+                        </nav>
+                    </aside>
+
+                    <main className="main-content">
+                        <header className="header">
+                            <div className="search-bar">🔍 <input type="text" placeholder="搜尋任務..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                <div style={{ textAlign: 'right', fontSize: '0.8rem' }}><b>管理員</b><br/><span style={{color: '#64748b'}}>專業版</span></div>
+                                <div style={{ width: '35px', height: '35px', borderRadius: '50%', background: '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>A</div>
+                            </div>
+                        </header>
+
+                        {activeView === 'dashboard' && (
+                            <div style={{ animation: 'fadeIn 0.4s' }}>
+                                <div className="dashboard-grid">
+                                    <div className="stat-card">
+                                        <p className="stat-title">總任務</p>
+                                        <p className="stat-value">{stats.total}</p>
+                                    </div>
+                                    <div className="stat-card">
+                                        <p className="stat-title">待處理</p>
+                                        <p className="stat-value" style={{color: '#f59e0b'}}>{stats.pending}</p>
+                                    </div>
+                                    <div className="stat-card">
+                                        <p className="stat-title">已完成</p>
+                                        <p className="stat-value" style={{color: '#10b981'}}>{stats.completed}</p>
+                                    </div>
+                                </div>
+                                <div className="task-container">
+                                    <div className="section-header"><h2>今日重點</h2></div>
+                                    {tasks.filter(t => !t.completed).slice(0, 3).map(t => (
+                                        <div key={t.id} className="task-card">
+                                            <div className="checkbox" onClick={() => toggleTask(t.id)}></div>
+                                            <div className="task-info">
+                                                <p><b>{t.title}</b></p>
+                                                <div className="task-meta">
+                                                    <span className={`tag tag-${t.priority}`}>{t.priority === 'urgent' ? '緊急' : '普通'}</span>
+                                                    <span>📅 {t.dueDate}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeView === 'tasks' && (
+                            <div className="task-container" style={{ animation: 'fadeIn 0.4s' }}>
+                                <div className="section-header">
+                                    <h2>我的任務</h2>
+                                    <button className="btn-add" onClick={() => setIsModalOpen(true)}>+ 新增任務</button>
+                                </div>
+                                {filteredTasks.map(t => (
+                                    <div key={t.id} className="task-card">
+                                        <div className={`checkbox ${t.completed ? 'checked' : ''}`} onClick={() => toggleTask(t.id)}>
+                                            {t.completed && <span style={{color: 'white'}}>✓</span>}
+                                        </div>
+                                        <div className="task-info">
+                                            <p className={t.completed ? 'completed' : ''}><b>{t.title}</b></p>
+                                            <div className="task-meta">
+                                                <span className={`tag tag-${t.priority}`}>{t.priority === 'urgent' ? '緊急' : t.priority === 'normal' ? '普通' : '低'}</span>
+                                                <span>📂 {t.project}</span>
+                                                <span>📅 {t.dueDate}</span>
+                                            </div>
+                                        </div>
+                                        <button style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.5 }} onClick={() => deleteTask(t.id)}>🗑️</button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {activeView === 'calendar' && (
+                            <div className="task-container" style={{ animation: 'fadeIn 0.4s' }}>
+                                <div className="section-header"><h2>2026年 5月</h2></div>
+                                <div className="calendar-grid">
+                                    {['日', '一', '二', '三', '四', '五', '六'].map(d => <div key={d} className="calendar-day-header">{d}</div>)}
+                                    {Array.from({ length: 5 }).map((_, i) => <div key={i} className="calendar-cell" style={{background: '#f8fafc'}}></div>)}
+                                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => {
+                                        const dateStr = `2026-05-${day.toString().padStart(2, '0')}`;
+                                        const dayTasks = tasks.filter(t => t.dueDate === dateStr);
+                                        return (
+                                            <div key={day} className={`calendar-cell ${day === 15 ? 'today' : ''}`}>
+                                                <p style={{ fontWeight: 'bold' }}>{day}</p>
+                                                {dayTasks.map(t => (
+                                                    <div key={t.id} className="task-dot" style={{ background: t.priority === 'urgent' ? '#fee2e2' : '#dbeafe', color: t.priority === 'urgent' ? '#b91c1c' : '#1d4ed8' }}>{t.title}</div>
+                                                ))}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {isModalOpen && (
+                        <div className="modal-overlay">
+                            <div className="modal">
+                                <h3>新增任務</h3>
+                                <div className="form-group"><label>任務名稱</label><input id="new-title" type="text" /></div>
+                                <div className="form-group"><label>專案</label><select id="new-project">{PROJECTS.slice(1).map(p => <option key={p} value={p}>{p}</option>)}</select></div>
+                                <div className="form-group"><label>優先級</label><select id="new-priority"><option value="urgent">緊急</option><option value="normal">普通</option><option value="low">低度</option></select></div>
+                                <div className="form-group"><label>日期</label><input id="new-date" type="date" defaultValue="2026-05-15" /></div>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button className="btn-add" style={{flex: 1}} onClick={() => addTask({ title: document.getElementById('new-title').value, project: document.getElementById('new-project').value, priority: document.getElementById('new-priority').value, dueDate: document.getElementById('new-date').value })}>儲存</button>
+                                    <button onClick={() => setIsModalOpen(false)} style={{flex: 1, border: 'none', background: '#f1f5f9', borderRadius: '8px', cursor: 'pointer'}}>取消</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
