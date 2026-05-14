@@ -145,7 +145,7 @@ const Dashboard = ({ tasks, setActiveView }) => {
       <div className="task-container">
         <div className="section-header">
           <h2 style={{ fontSize: '1.25rem' }}>近期重點</h2>
-          <button style={{ color: var(--primary), fontWeight: 600 }} onClick={() => setActiveView('tasks')}>查看全部 →</button>
+          <button style={{ color: 'var(--primary)', fontWeight: 600 }} onClick={() => setActiveView('tasks')}>查看全部 →</button>
         </div>
         {tasks.filter(t => !t.completed).slice(0, 3).map(task => (
           <TaskCard key={task.id} task={task} onToggle={() => {}} onDelete={() => {}} />
